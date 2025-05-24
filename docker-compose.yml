@@ -1,5 +1,23 @@
 services:
+  db:
+    image: postgres:17-alpine
+    container_name: postgresql-django
+    # platform: linux/arm64
+    restart: unless-stopped
+    ports:
+      - ${POSTGRESQL_PORT}:${POSTGRESQL_PORT}
+    volumes:
+      - dev-db-data:/var/lib/postgresql/data
+    env_file: .env
+    networks:
+      - net-services
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
   app:
+    depends_on:
+      - db
     build:
       context: .
       args:
@@ -10,3 +28,12 @@ services:
       - ./app:/app
     command: >
       sh -c "python manage.py runserver 0.0.0.0:4500"
+    networks:
+      - net-services
+
+networks:
+  net-services:
+    driver: bridge
+volumes:
+  dev-db-data:
+    driver: local
